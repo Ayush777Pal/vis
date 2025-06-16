@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import InternshipDetail from './pages/InternshipDetail';
 import {Box} from '@mui/material';
+import TaskDetail from './pages/TaskDetail';
 
 
 const App = () => {
@@ -13,6 +14,7 @@ const App = () => {
       <Routes>
         <Route path='/' element={<Home></Home>}></Route>
         <Route path='/internship/:id' element={<InternshipDetail></InternshipDetail>}></Route>
+        <Route path='/task/:id' element={<TaskDetail/>}></Route>
       </Routes>
     </Box>
     
