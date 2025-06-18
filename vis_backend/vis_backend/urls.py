@@ -16,8 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+#SETTING SAME AS WE SEND ROUTES IN NODE JS APP.JS
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('internships.urls')),
+    #in this we had given the api of other works same as for each new route
+    path('api/', include('internships.urls')), #APP SPECIFIC APIS
+
+    #global auth route
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]

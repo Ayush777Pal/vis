@@ -34,6 +34,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 INSTALLED_APPS = [
     'django.contrib.admin',
     'rest_framework',
+    'rest_framework_simplejwt',
     'internships',
     'corsheaders',
     'django.contrib.auth',
@@ -42,6 +43,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+#look for more its usage
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
