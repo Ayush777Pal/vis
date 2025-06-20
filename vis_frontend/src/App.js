@@ -5,8 +5,8 @@ import Home from './pages/Home';
 import InternshipDetail from './pages/InternshipDetail';
 import {Box} from '@mui/material';
 import TaskDetail from './pages/TaskDetail';
-
-
+import Login from './pages/Login';
+import Register from './pages/Register';
 const App = () => {
   return (
     <Box>
@@ -15,6 +15,8 @@ const App = () => {
         <Route path='/' element={<Home></Home>}></Route>
         <Route path='/internship/:id' element={<InternshipDetail></InternshipDetail>}></Route>
         <Route path='/task/:id' element={<TaskDetail/>}></Route>
+        <Route path='/login' element={<Login />} />
+        <Route path='/Register' element={<Register/>}></Route>
       </Routes>
     </Box>
     

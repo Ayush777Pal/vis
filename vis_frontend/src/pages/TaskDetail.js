@@ -9,6 +9,7 @@ const TaskDetail = () => {
   const [loading, setLoading] = useState(true);
   const [answer, setAnswer] = useState('');
   const [file, setFile] = useState(null);
+  const userId = localStorage.getItem('userId');
 
   useEffect(() => {
     axios.get(`/tasks/${id}/`)  
@@ -26,7 +27,7 @@ const TaskDetail = () => {
   const handleSubmit = async ()=>{
     const formData = new FormData();
     formData.append('task', task.id);
-    formData.append('user',1);
+    formData.append('user', userId);
     if (task.task_type === 'upload') {
       formData.append('file', file);
     }else{
@@ -59,39 +60,34 @@ const TaskDetail = () => {
         <Typography variant='h4' gutterBottom>{task.title}</Typography>
         <Typography variant='subtitle1' gutterBottom>Type: {task.task_type}</Typography>
         <Typography variant='body1'>{task.description}</Typography>
-
         <Box mt={4}>
-          {task.task_type === 'mcq' && (
+          {['oneword', 'code'].includes(task.task_type) && (
             <TextField
-             label="Your Answer"
-             fullWidth
-             value={answer}
-             onChange={(e)=> setAnswer(e.target.value)}
-             sx={{mb:2}}
-            >
-            </TextField>
+              label={task.task_type === 'oneword' ? 'Your Answer' : 'Your Code'}
+              fullWidth
+              multiline={task.task_type === 'code'}
+              rows={task.task_type === 'code' ? 6 : 1}
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              sx={{ mb: 2 }}
+            />
           )}
 
-          {task.task_type === 'code' && (
-            <TextField
-            label="Your Code"
-            fullWidth
-            multiline
-            rows={6}
-            value={answer}
-            onChange={(e)=> setAnswer(e.target.value)}
-            sx={{mb:2}}
-            >
-            </TextField>
-          )}
-            {task.task_type === 'upload' && (
+          {task.task_type === 'upload' && (
             <input
               type="file"
               onChange={(e) => setFile(e.target.files[0])}
               style={{ marginBottom: '16px' }}
             />
           )}
-          <Button variant='contained' onClick={handleSubmit}>Submit Task</Button>
+
+          <Button variant="contained" onClick={handleSubmit}>
+            Submit Task
+          </Button>
+
+          {feedback && (
+            <Typography sx={{ mt: 2 }}>Feedback: {feedback}</Typography>
+          )}
         </Box>
       </Paper>
     </Container>
