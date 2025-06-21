@@ -1,11 +1,13 @@
-from grpc import Status
 from rest_framework import viewsets
 from .models import Internship, Task, Submission
 from .serializers import InternshipSerializer, TaskSerializer, SubmissionSerializer
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
+#we had create the serilaizer class for crud operations
 class InternshipViewSet(viewsets.ModelViewSet):
     serializer_class= InternshipSerializer
     queryset = Internship.objects.all()
@@ -20,50 +22,103 @@ class TaskViewSet(viewsets.ModelViewSet):
         if internship_id:
             queryset = queryset.filter(internship_id=internship_id)
         return queryset
-
+    
 class SubmissionViewSet(viewsets.ModelViewSet):
-    queryset= Submission.objects.all()
-    serializer_class= SubmissionSerializer
+    queryset = Submission.objects.all()
+    serializer_class = SubmissionSerializer
 
-    def create(self, request, *args, **kwargs):
-        data= request.data
-        user_id=data.get('user')
-        task_id=data.get('task')
+    def create(self, request, *args, **kwargs):  # ✅ Now it's inside
+        data = request.data
+        print("Received data:", data)
+        print("Received files:", request.FILES)
+
+        user_id = data.get('user')
+        task_id = data.get('task')
         answer = data.get('answer', '').strip()
         uploaded_file = request.FILES.get('file')
 
         if not user_id or not task_id:
-            return Response({'error':'Missing user or task'}, status=400)
-        
-        task = Task.objects.get(id=task_id)
-        marks= None
-        evaluated=False
-        feedback=""
+            return Response({'error': 'Missing user or task'}, status=400)
+
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            return Response({'error': 'Task not found'}, status=404)
+
+        marks = None
+        evaluated = False
+        feedback = ""
 
         if task.task_type == 'oneword':
             correct = (task.correct_answer or '').strip().lower()
-            submitted=answer.lower()
-            marks=1.0 if submitted == correct else 0.0
-            evaluated= True
-            feedback="Correct" if marks==1.0 else "Incorrect"
+            submitted = answer.lower()
+            marks = 1.0 if submitted == correct else 0.0
+            evaluated = True
+            feedback = "Correct" if marks == 1.0 else "Incorrect"
         elif task.task_type == 'code':
-            marks=0.0
-            evaluated=False
-            feedback="File uploaded. Awaiting for manual evaluation"
-        
-        serializer = self.get_serializer(Submission)
+            marks = 0.0
+            evaluated = False
+            feedback = "File uploaded. Awaiting manual evaluation"
+
+        submission = Submission.objects.create(
+            user_id=user_id,
+            task=task,
+            submitted_answer=answer if answer else None,
+            submission_file=uploaded_file,
+            marks_awarded=marks,
+            evaluated=evaluated,
+            feedback=feedback
+        )
+
+        serializer = self.get_serializer(submission)
         return Response(serializer.data)
 
 
+ #normal python functions for bussiness logic
 @api_view(['POST'])
 def register_user(request):
+    print("Received:", request.data)
     username = request.data.get('username')
     password = request.data.get('password')
     email = request.data.get('email')
 
     if User.objects.filter(username=username).exists():
-        return Response({'error':"User already taken"}, status=Status.HTTP_400_BAD_REQUEST)
+        return Response({'error':"User already taken"}, status=status.HTTP_400_BAD_REQUEST)
     
     user = User.objects.create_user(username=username, password=password, email=email)
-    return Response({'message':'User registered successfully'}, status=Status.HTTP_201_CREATED)
+    return Response({'message':'User registered successfully'}, status=status.HTTP_201_CREATED)
     
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    user = request.user
+    return Response({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_progress(request):
+    user=request.user
+
+    total_tasks=Task.objects.count()
+    completed_tasks = Submission.objects.filter(user=user, submitted=True).count()
+    evaluated = Submission.objects.filter(user=user, submitted=True, evaluated=False).exists()
+
+    evaluated_status = "completed" if not evaluated and completed_tasks==total_tasks else "pending"
+
+    #for certificate
+    user_name = user.get_full_name() or user.username
+    internship_title="Ayush Group of Companies"
+    duration = "1st May 2025 - 31st May 2025"
+
+    return Response({
+        "total_tasks":total_tasks,
+        "completed_tasks":completed_tasks,
+        "evaluation_status":evaluated_status,
+        "user_name":user_name,
+        "internship_title":internship_title,
+        "duration":duration
+    })

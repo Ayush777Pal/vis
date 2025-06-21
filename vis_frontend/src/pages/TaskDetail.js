@@ -10,7 +10,6 @@ const TaskDetail = () => {
   const [answer, setAnswer] = useState('');
   const [file, setFile] = useState(null);
   const userId = localStorage.getItem('userId');
-
   useEffect(() => {
     axios.get(`/tasks/${id}/`)  
       .then(res => {
@@ -85,9 +84,9 @@ const TaskDetail = () => {
             Submit Task
           </Button>
 
-          {feedback && (
+          {/* {feedback && (
             <Typography sx={{ mt: 2 }}>Feedback: {feedback}</Typography>
-          )}
+          )} */}
         </Box>
       </Paper>
     </Container>

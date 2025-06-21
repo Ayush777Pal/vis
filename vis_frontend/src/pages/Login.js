@@ -13,6 +13,12 @@ const Login = () => {
         username,
         password
       });
+      const userRes = await axios.get('/me/', {
+      headers: {
+        Authorization: `Bearer ${res.data.access}`
+      }
+    });
+    localStorage.setItem('userId', userRes.data.id); 
       localStorage.setItem('access', res.data.access);
       localStorage.setItem('refresh', res.data.refresh);
       alert('Login successful');

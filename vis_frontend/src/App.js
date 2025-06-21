@@ -7,6 +7,7 @@ import {Box} from '@mui/material';
 import TaskDetail from './pages/TaskDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ProgressPage from './pages/ProgressPage';
 const App = () => {
   return (
     <Box>
@@ -17,6 +18,7 @@ const App = () => {
         <Route path='/task/:id' element={<TaskDetail/>}></Route>
         <Route path='/login' element={<Login />} />
         <Route path='/Register' element={<Register/>}></Route>
+        <Route path='/progresspage' element={<ProgressPage/>}></Route>
       </Routes>
     </Box>
     

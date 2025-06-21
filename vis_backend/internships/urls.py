@@ -10,5 +10,7 @@ router.register(r'submissions', SubmissionViewSet)
 
 urlpatterns=[
     path("",include(router.urls)),
+    path('progress/', user_progress),
+    path('me/', current_user),
     path('register/', register_user)
-]
+] 
