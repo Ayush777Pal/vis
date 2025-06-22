@@ -104,8 +104,8 @@ def user_progress(request):
     user=request.user
 
     total_tasks=Task.objects.count()
-    completed_tasks = Submission.objects.filter(user=user, submitted=True).count()
-    evaluated = Submission.objects.filter(user=user, submitted=True, evaluated=False).exists()
+    completed_tasks = Submission.objects.filter(user=user).count()
+    evaluated = Submission.objects.filter(user=user, evaluated=False).exists()
 
     evaluated_status = "completed" if not evaluated and completed_tasks==total_tasks else "pending"
 

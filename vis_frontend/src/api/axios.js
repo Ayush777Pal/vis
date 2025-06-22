@@ -1,10 +1,19 @@
-import axios from "axios";
+import axios from 'axios';
 
-const instance= axios.create({
-    baseURL:"http://127.0.0.1:8000/api",
-    headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-    }
+const instance = axios.create({
+  baseURL: 'http://127.0.0.1:8000/api',
 });
 
-export default instance; 
+// ✅ Use a request interceptor to attach token dynamically on every request
+instance.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('access'); // fetch latest token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+export default instance;
