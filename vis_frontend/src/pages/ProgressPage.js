@@ -70,7 +70,7 @@ const generateCertificate = () => {
 
   // Issued by
   doc.setFontSize(12);
-  doc.text('Issued by Virtual Internship Simulator', center, 130, { align: 'center' });
+  doc.text('Issued by GFP private limited', center, 130, { align: 'center' });
 
   // Signature & Date
   doc.setFont('courier', 'italic');

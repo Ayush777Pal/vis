@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
+
 
 #we had create the serilaizer class for crud operations
 class InternshipViewSet(viewsets.ModelViewSet):
@@ -45,6 +47,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         except Task.DoesNotExist:
             return Response({'error': 'Task not found'}, status=404)
 
+        existing = Submission.objects.filter(user_id=user_id, task=task).first()
+        if existing:
+           return Response({'error': 'You have already submitted this task'}, status=400)
         marks = None
         evaluated = False
         feedback = ""
@@ -55,7 +60,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             marks = 1.0 if submitted == correct else 0.0
             evaluated = True
             feedback = "Correct" if marks == 1.0 else "Incorrect"
-        elif task.task_type == 'code':
+        elif task.task_type == 'code' or task.task_type=='upload':
             marks = 0.0
             evaluated = False
             feedback = "File uploaded. Awaiting manual evaluation"
@@ -104,14 +109,21 @@ def user_progress(request):
     user=request.user
 
     total_tasks=Task.objects.count()
-    completed_tasks = Submission.objects.filter(user=user).count()
-    evaluated = Submission.objects.filter(user=user, evaluated=False).exists()
+    completed_task_ids = Submission.objects.filter(
+        user=user,
+        evaluated=True
+    ).filter(
+        Q(marks_awarded__gt=0) | 
+        Q(task__task_type__in=['code', 'upload'])
+    ).values_list('task', flat=True).distinct()
 
+    completed_tasks = completed_task_ids.count()    
+    evaluated = Submission.objects.filter(user=user, evaluated=False).exists()
     evaluated_status = "completed" if not evaluated and completed_tasks==total_tasks else "pending"
 
     #for certificate
     user_name = user.get_full_name() or user.username
-    internship_title="Ayush Group of Companies"
+    internship_title="Summer training Intenship"
     duration = "1st May 2025 - 31st May 2025"
 
     return Response({
@@ -122,3 +134,28 @@ def user_progress(request):
         "internship_title":internship_title,
         "duration":duration
     })
+
+#we are using patch instead of get or post because we need to update only
+#marks and feedback and doesn't need whole object
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def evaluate_submission(request, submission_id):
+    try:
+        submission = Submission.objects.get(id=submission_id)
+    except Submission.DoesNotExist:
+        return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    marks = request.data.get('marks_awarded')
+    feedback = request.data.get('feedback', '')
+
+    if marks is None:
+        return Response({'error': 'Marks are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    submission.marks_awarded = marks
+    submission.feedback = feedback
+    submission.evaluated = True
+    submission.save()
+
+    # ✅ Return serialized updated data
+    serializer = SubmissionSerializer(submission)
+    return Response(serializer.data, status=status.HTTP_200_OK)

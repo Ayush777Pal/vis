@@ -2,15 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from '../api/axios';
 import { Typography, Box, Container, Paper, CircularProgress, TextField, Button } from '@mui/material';
+import { getValidUserId } from '../utils/auth';
 
 const TaskDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // task ID from route
   const [task, setTask] = useState(null);  
   const [loading, setLoading] = useState(true);
   const [answer, setAnswer] = useState('');
   const [file, setFile] = useState(null);
-  const userId = localStorage.getItem('userId');
+  const [submission, setSubmission] = useState(null);
+  const userId = getValidUserId();
+
+  // 🔁 Fetch Task
   useEffect(() => {
+    setLoading(true);
+    setTask(null);         // ✅ Reset task
+    setSubmission(null);   // ✅ Reset submission
+    setAnswer('');         // ✅ Clear answer
+    setFile(null);         // ✅ Clear file
+
     axios.get(`/tasks/${id}/`)  
       .then(res => {
         setTask(res.data);
@@ -22,26 +32,43 @@ const TaskDetail = () => {
       });
   }, [id]);
 
-  //here how to handle submits
-  const handleSubmit = async ()=>{
+  // 🔁 Fetch Submission
+  useEffect(() => {
+    // if (!userId || !task?.id) return;
+    if (!userId) return;
+    axios.get(`/submissions/?user=${userId}&task=${id}`)
+      .then(res => {
+        if (res.data.length > 0) {
+          setSubmission(res.data[0]);
+        } else {
+          setSubmission(null); // ✅ Ensure it's reset if no submission found
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch submission:", err);
+      });
+  }, [id, userId]);
+
+  // 🔁 Handle submit
+  const handleSubmit = async () => {
     const formData = new FormData();
     formData.append('task', task.id);
     formData.append('user', userId);
     if (task.task_type === 'upload') {
       formData.append('file', file);
-    }else{
+    } else {
       formData.append('answer', answer);
     }
 
-    try{
-      //need to understand this
-      await axios.post('/submissions/', formData,{
-        headers:{'Content-Type':'multipart/form-data'}
+    try {
+      const res = await axios.post('/submissions/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert("Submission succesfull !");
-    }catch(err){
-      console.error(err);
-      alert("Submission failed! ");
+      alert("Submission successful!");
+      setSubmission(res.data); // ✅ Update UI with new submission
+    } catch (err) {
+      const error = err?.response?.data?.error || 'Submission failed!';
+      alert(error);
     }
   };
 
@@ -80,13 +107,23 @@ const TaskDetail = () => {
             />
           )}
 
-          <Button variant="contained" onClick={handleSubmit}>
-            Submit Task
-          </Button>
+          <Button variant="contained" onClick={handleSubmit}>Submit Task</Button>
 
-          {/* {feedback && (
-            <Typography sx={{ mt: 2 }}>Feedback: {feedback}</Typography>
-          )} */}
+        {submission && (
+          <Box mt={2}>
+            {submission.submitted_answer && task.task_type==='oneword'&&(
+              <Typography variant="body1"><strong>Answer submitted:</strong> {submission.submitted_answer}</Typography>
+            )}
+            
+            {/* {submission.evaluated === true && ( */}
+              <Box>
+                <Typography variant="body1"><strong>Marks Awarded:</strong> {submission.marks_awarded}</Typography>
+                <Typography variant="body1"><strong>Feedback:</strong> {submission.feedback}</Typography>
+              </Box>
+            {/* )} */}
+          </Box>
+        )}
+
         </Box>
       </Paper>
     </Container>

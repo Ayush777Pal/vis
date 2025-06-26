@@ -12,5 +12,6 @@ urlpatterns=[
     path("",include(router.urls)),
     path('progress/', user_progress),
     path('me/', current_user),
-    path('register/', register_user)
+    path('register/', register_user),
+    path('submissions/<int:submission_id>/evaluate/', evaluate_submission, name='evaluate')
 ] 
